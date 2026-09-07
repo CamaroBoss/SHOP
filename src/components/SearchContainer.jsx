@@ -8,7 +8,7 @@ import Logo from '../components/Logo';
 import theme from '../styles/theming.module.css';
 import 'movement.css';
 
-const SearchContainer = memo(function SearchContainer({ logo = true, cls, nav = true }) {
+const SearchContainer = memo(function SearchContainer({ logo = true, cls, nav = true, navigating }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const debounceRef = useRef(null);
@@ -36,6 +36,21 @@ const SearchContainer = memo(function SearchContainer({ logo = true, cls, nav = 
     }
   }, []);
 
+  const go = (strin) => {
+    if (nav) {
+      navigate("/search", {
+        state: {
+          url: strin,
+        }
+      });
+    } else {
+      const processedUrl = navigating.process(strin);
+      if (processedUrl) {
+        navigating.go(navigating.id, processedUrl);
+      }
+    }
+  }
+
   const handleInputChange = useCallback(
     (e) => {
       const newQuery = e.target.value;
@@ -58,27 +73,16 @@ const SearchContainer = memo(function SearchContainer({ logo = true, cls, nav = 
       if (e.key !== 'Enter') return;
       const trimmed = query.trim();
       if (!trimmed) return;
-
-      if (nav) {
-        sessionStorage.setItem('query', trimmed);
-        navigate('/indev');
-      } else {
-        window.parent.tabManager.navigate(trimmed);
-      }
+      go(trimmed);
     },
-    [query, nav, navigate],
+    [query, go],
   );
 
   const handleResultClick = useCallback(
     (phrase) => {
-      if (nav) {
-        sessionStorage.setItem('query', phrase);
-        navigate('/indev');
-      } else {
-        window.parent.tabManager.navigate(phrase);
-      }
+      go(phrase);
     },
-    [nav, navigate],
+    [go],
   );
 
   useEffect(() => {
@@ -105,7 +109,7 @@ const SearchContainer = memo(function SearchContainer({ logo = true, cls, nav = 
       data-m={!cls && 'bounce-up'}
       data-m-duration={!cls && '0.8'}
     >
-      {logo && <Logo options="w-[15rem] h-30" />}
+      {logo && <Logo options="w-[15.8rem] h-30" />}
       <GlowWrapper
         glowOptions={{ color: options.glowWrapperColor || '255, 255, 255', size: 70, opacity: 0.2 }}
       >

@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import LinkDialog from './NewQuickLink';
 import EditLinkDialog from './EditQuickLink';
 
-const QuickLinks = ({ cls, nav = true }) => {
+const QuickLinks = ({ cls, nav = true, navigating }) => {
   const { options, updateOption } = useOptions();
   const navigate = useNavigate();
   const [fallback, setFallback] = useState({});
@@ -17,9 +17,9 @@ const QuickLinks = ({ cls, nav = true }) => {
 
   const defaultLinks = [
     { link: 'https://google.com', icon: 'https://google.com/favicon.ico', name: 'Google' },
-    { link: 'https://facebook.com', icon: 'https://facebook.com/favicon.ico', name: 'Facebook' },
-    { link: 'https://quora.com', icon: 'https://quora.com/favicon.ico', name: 'Quora' },
-    { link: 'https://github.com', icon: 'https://github.com/favicon.ico', name: 'GitHub' },
+    { link: 'https://cineby.gd', icon: '/assets/img/fyhn.ico', name: 'Movies' },
+    { link: 'https://discord.com', icon: '/assets/img/dsci.ico', name: 'Discord' },
+    { link: 'https://github.com', icon: '/assets/img/icogh.ico', name: 'GitHub' },
   ];
 
   const [quickLinks, setQuickLinks] = useState(() => {
@@ -31,7 +31,18 @@ const QuickLinks = ({ cls, nav = true }) => {
   });
 
   const go = (url) => {
-    nav ? (sessionStorage.setItem('query', url), navigate('/indev')) : window.parent.tabManager.navigate(url);
+    if (nav) {
+      navigate("/search", {
+        state: {
+          url: url,
+        }
+      });
+    } else {
+      const processedUrl = navigating.process(url);
+      if (processedUrl) {
+        navigating.go(navigating.id, processedUrl);
+      }
+    }
   };
 
   useEffect(() => {

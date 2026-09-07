@@ -5,20 +5,41 @@ import react from '@vitejs/plugin-react-swc';
 import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { logging, server as wisp } from '@mercuryworkshop/wisp-js/server';
-import { createBareServer } from "@tomphttp/bare-server-node";
+import { createBareServer } from '@tomphttp/bare-server-node';
 import { bareModulePath } from '@mercuryworkshop/bare-as-module3';
 import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
-import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
-import { scramjetPath } from "@mercuryworkshop/scramjet/path";
+import { baremuxPath } from 'bare-mux-fork/node';
+import { scramjetPath } from '@mercuryworkshop/scramjet/path';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 
 dotenv.config();
-const useBare = process.env.BARE === "false" ? false : true;
+const useBare = process.env.BARE === 'true';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 logging.set_level(logging.NONE);
 let bare;
+
+async function remoteApps(urls = ['https://ci.baylib.top/apps.json?t=' + Date.now()]) {
+  const list = Array.isArray(urls) ? urls : [urls];
+  let lastErr;
+
+  for (const u of list) {
+    try {
+      const res = await fetch(u, { cache: 'no-store' });
+
+      if (!res.ok) {
+        throw new Error(`apps.json ${res.status}`);
+      }
+
+      return JSON.stringify(await res.json());
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  throw lastErr || new Error('apps.json unavailable');
+}
 
 Object.assign(wisp.options, {
   dns_method: 'resolve',
@@ -35,21 +56,22 @@ const routeRequest = (req, resOrSocket, head) => {
 const obf = {
   enable: true,
   autoExcludeNodeModules: true,
-  threadPool: true,
+  threadPool: false,
   options: {
     compact: true,
     controlFlowFlattening: true,
-    controlFlowFlatteningThreshold: 0.5,
+    controlFlowFlatteningThreshold: 0.3,
     deadCodeInjection: false,
     debugProtection: false,
     disableConsoleOutput: true,
-    identifierNamesGenerator: 'hexadecimal',
-    selfDefending: true,
+    identifierNamesGenerator: 'mangled',
+    selfDefending: false,
     simplify: true,
     splitStrings: false,
     stringArray: true,
     stringArrayEncoding: [],
     stringArrayCallsTransform: false,
+    stringArrayThreshold: 0.5,
     transformObjectKeys: false,
     unicodeEscapeSequence: false,
     ignoreImports: true,
@@ -60,6 +82,7 @@ export default defineConfig(({ command }) => {
   const environment = command === 'serve' ? 'dev' : 'stable';
 
   return {
+    base: '/',
     plugins: [
       react(),
       vitePluginBundleObfuscator(obf),
@@ -67,16 +90,16 @@ export default defineConfig(({ command }) => {
         targets: [
           { src: [normalizePath(resolve(libcurlPath, '*'))], dest: 'libcurl' },
           { src: [normalizePath(resolve(baremuxPath, '*'))], dest: 'baremux' },
-          { src: [normalizePath(resolve(scramjetPath, '*'))], dest: 'scram' },
+          { src: [normalizePath(resolve(scramjetPath, '*'))], dest: 'eggs' },
           useBare && { src: [normalizePath(resolve(bareModulePath, '*'))], dest: 'baremod' },
           {
             src: [
               normalizePath(resolve(uvPath, 'uv.handler.js')),
               normalizePath(resolve(uvPath, 'uv.client.js')),
               normalizePath(resolve(uvPath, 'uv.bundle.js')),
-              normalizePath(resolve(uvPath, 'sw.js')),
+              normalizePath(resolve(uvPath, 'uv.sw.js')),
             ],
-            dest: 'uv',
+            dest: 'portal',
           },
         ].filter(Boolean),
       }),
@@ -118,19 +141,32 @@ export default defineConfig(({ command }) => {
             }
           });
         },
-      }
-    ],
+      },
+      {
+        name: 'remote-apps-json',
+        apply: 'build',
+        async load(id) {
+          const cleanId = normalizePath(id).split('?')[0];
+
+          if (!cleanId.endsWith('/src/data/apps.json')) {
+            return null;
+          }
+
+          return remoteApps();
+        },
+      },
+
+    ].filter(Boolean),
     build: {
       target: 'es2022',
       reportCompressedSize: false,
-      esbuild: { 
+      esbuild: {
         legalComments: 'none',
-        treeShaking: true
+        treeShaking: true,
       },
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'index.html'),
-          loader: resolve(__dirname, 'src/static/loader.html'),
         },
         output: {
           entryFileNames: '[hash].js',
@@ -139,7 +175,7 @@ export default defineConfig(({ command }) => {
           manualChunks: (id) => {
             if (!id.includes('node_modules')) return;
             const m = id.split('node_modules/')[1];
-            const pkg = m.startsWith('@') ? m.split('/').slice(0,2).join('/') : m.split('/')[0];
+            const pkg = m.startsWith('@') ? m.split('/').slice(0, 2).join('/') : m.split('/')[0];
             if (/react-router|react-dom|react\b/.test(pkg)) return 'react';
             if (/^@mui\//.test(pkg) || /^@emotion\//.test(pkg)) return 'mui';
             if (/lucide/.test(pkg)) return 'icons';
@@ -149,11 +185,11 @@ export default defineConfig(({ command }) => {
           },
         },
         treeshake: {
-          moduleSideEffects: 'no-external'
-        }
+          moduleSideEffects: 'no-external',
+        },
       },
       minify: 'esbuild',
-      sourcemap: false
+      sourcemap: false,
     },
     css: {
       modules: {
@@ -170,14 +206,16 @@ export default defineConfig(({ command }) => {
           rewrite: (path) => path.replace(/^\/assets\/img/, '/img'),
         },
         '/assets-fb': {
-          target: 'https://dogeub-assets.ftp.sh',
+          target: 'https://dogeub-assets.pages.dev',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/assets-fb/, ''),
+          rewrite: (path) => path.replace(/^\/assets-fb/, '/img/server'),
         },
       },
     },
     define: {
-      __ENVIRONMENT__: JSON.stringify(environment)
-    }
+      __ENVIRONMENT__: JSON.stringify(environment),
+      POPUNDER_ENABLED: JSON.stringify(process.env.POPUNDER_ENABLED),
+      POPUNDER_URL: JSON.stringify(process.env.POPUNDER_URL),
+    },
   };
 });

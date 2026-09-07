@@ -85,7 +85,8 @@ const proxy = (url, type = "application/javascript") => async (req, reply) => {
       "te",
       "trailer",
       "transfer-encoding",
-      "upgrade"
+      "upgrade",
+      "content-encoding"
     ];
     for (const [k, v] of res.headers) {
       if (!hop.includes(k.toLowerCase())) reply.header(k, v);
@@ -105,7 +106,7 @@ const proxy = (url, type = "application/javascript") => async (req, reply) => {
 };
 
 app.get("/assets/img/*", proxy(req => `https://dogeub-assets.pages.dev/img/${req.params["*"]}`, ""));
-app.get("/assets-fb/*", proxy(req => `https://dogeub-assets.ftp.sh/${req.params["*"]}`, ""));
+app.get("/assets-fb/*", proxy(req => `https://dogeub-assets.pages.dev/img/server/${req.params["*"]}`, ""));
 app.get("/js/script.js", proxy(() => "https://byod.privatedns.org/js/script.js"));
 app.get("/ds", (req, res) => res.redirect("https://discord.gg/ZBef7HnAeg"));
 app.get("/return", async (req, reply) =>
@@ -122,4 +123,5 @@ app.setNotFoundHandler((req, reply) =>
     : reply.code(404).send({ error: "Not Found" })
 );
 
-app.listen({ port }).then(() => console.log(`Server running on ${port}`));
+const host = process.env.HOST || "0.0.0.0";
+app.listen({ port, host }).then(() => console.log(`Server running on ${port}`));

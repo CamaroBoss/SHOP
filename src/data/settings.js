@@ -7,27 +7,63 @@ import {
   prConfig,
   designConfig,
 } from '/src/utils/config';
+import { exportSettings, importSettings } from '/src/utils/settingsExport';
 
-export const privacyConfig = ({ options, updateOption, openPanic }) => ({
-  1: {
-    name: 'Site Title',
-    desc: "This setting allows you to change the site's tab title and icon.",
-    config: meta,
-    value: (
-      meta.find(
-        (c) => c.value && typeof c.value === 'object' && c.value.tabName === options.tabName,
-      ) || meta[0]
-    ).value,
-    type: 'select',
-    action: (a) => {
-      updateOption(a);
-      import('/src/utils/utils.js').then(({ ckOff }) => ckOff());
-    },
-  },
-  2: {
+export const privacyConfig = ({ options, updateOption, openPanic }) => {
+  const isCustom = options.isCustomCloak || (options.tabName && !meta.find(c => c.value.tabName === options.tabName));
+  const metaWithCustom = [
+    ...meta,
+    { option: 'Custom', value: { id: 'custom', isCustomCloak: true } }
+  ];
+
+  const config = {
+    1: {
+      name: 'Site Title',
+      desc: "This setting allows you to change the site's tab title and icon.",
+      config: metaWithCustom,
+      value: isCustom
+        ? metaWithCustom[metaWithCustom.length - 1].value
+        : (meta.find(
+            (c) => c.value && typeof c.value === 'object' && c.value.tabName === options.tabName,
+          ) || meta[0]).value,
+      type: 'select',
+      action: (a) => {
+        if (a.isCustomCloak) {
+          updateOption({ isCustomCloak: true });
+        } else {
+          updateOption({ ...a, isCustomCloak: false });
+          import('/src/utils/utils.js').then(({ ckOff }) => ckOff());
+        }
+      },
+    }
+  };
+
+  if (isCustom) {
+    config[2] = {
+      name: 'Custom Tab Title',
+      desc: 'Set a custom title for the site tab.',
+      value: options.tabName === meta[0].value.tabName ? '' : (options.tabName || ''),
+      type: 'input',
+      action: (b) => {
+        updateOption({ tabName: b || meta[0].value.tabName });
+        import('/src/utils/utils.js').then(({ ckOff }) => ckOff());
+      },
+    };
+    config[3] = {
+      name: 'Custom Tab Icon',
+      desc: 'Set a custom tab icon (URL) for the site.',
+      value: options.tabIcon === meta[0].value.tabIcon ? '' : (options.tabIcon || ''),
+      type: 'input',
+      action: (b) => {
+        updateOption({ tabIcon: b || meta[0].value.tabIcon });
+        import('/src/utils/utils.js').then(({ ckOff }) => ckOff());
+      },
+    };
+  }
+
+  config[4] = {
     name: 'Auto Cloak',
     desc: 'Automatically apply the selected cloak when you switch tabs, restore original when you return.',
-    config: meta,
     value: !!options.clkOff,
     type: 'switch',
     action: (b) => {
@@ -37,15 +73,19 @@ export const privacyConfig = ({ options, updateOption, openPanic }) => ({
       }, 100);
     },
     disabled: !options.tabName || options.tabName == meta[0].value.tabName,
-  },
-  3: {
-    name: 'Open in AB',
-    desc: 'This will open the site into an about:blank tab. Make sure popups are enabled.',
-    value: options.aboutBlank,
+  };
+
+  config[5] = {
+    name: 'Open about:blank on startup',
+    desc: 'When enabled, the about:blank tab opens automatically when you visit.',
+    value:
+      options.aboutBlankAutoOpen === true ||
+      (options.aboutBlank && options.aboutBlankAutoOpen !== false),
     type: 'switch',
-    action: (b) => setTimeout(() => updateOption({ aboutBlank: b }), 100),
-  },
-  4: {
+    action: (b) => setTimeout(() => updateOption({ aboutBlankAutoOpen: b }), 100),
+  };
+
+  config[6] = {
     name: 'Panic Key',
     desc: 'Enable or disable the panic key option.',
     value: !!options.panicToggleEnabled,
@@ -56,16 +96,19 @@ export const privacyConfig = ({ options, updateOption, openPanic }) => ({
         import('/src/utils/utils.js').then(({ panic }) => panic());
       }, 100);
     },
-  },
-  5: {
+  };
+
+  config[7] = {
     name: 'Panic Shortcut',
     desc: 'Set a keybind/shortcut that redirects you to a page when pressed.',
     value: 'Set Key',
     type: 'button',
     action: openPanic,
     disabled: !!!options.panicToggleEnabled,
-  },
-});
+  };
+
+  return config;
+};
 
 export const customizeConfig = ({ options, updateOption }) => ({
   1: {
@@ -114,6 +157,13 @@ export const customizeConfig = ({ options, updateOption }) => ({
     type: 'switch',
     action: (b) => setTimeout(() => updateOption({ donationBtn: b }), 100),
   },
+  7: {
+    name: 'Compact App Header',
+    desc: 'Shrink the app/game header to a single line.',
+    value: options.shrinkHeader ?? false,
+    type: 'switch',
+    action: (b) => setTimeout(() => updateOption({ shrinkHeader: b }), 100),
+  },
 });
 
 export const browsingConfig = ({ options, updateOption }) => ({
@@ -149,13 +199,39 @@ export const advancedConfig = ({ options, updateOption }) => ({
   2: {
     name: 'Wisp Config',
     desc: 'Configure the websocket server location.',
-    value:
-      options.wServer ||
-      `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/wisp/`,
+    value: options.wServer
+      ? options.wServer
+      : `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/wisp/`,
     type: 'input',
-    action: (b) => updateOption({ wServer: b }),
+    action: (b) => updateOption({ wServer: b || null }),
   },
-  3: {
+  ...(POPUNDER_ENABLED === 'true'
+    ? {
+        3: {
+          name: 'Disable Ads',
+          desc: 'Enter a key to disable all ads. Given to Premium Supporters & Beta Testers.',
+          value: options.adKeyInput || options.adKey || '',
+          type: 'input',
+          inputValidation: 'adKey',
+          action: (b) => updateOption({ adKeyInput: b?.trim() || null }),
+        },
+      }
+    : {}),
+  4: {
+    name: 'Export Settings',
+    desc: 'Download your current settings as a JSON file.',
+    type: 'button',
+    value: 'Export JSON',
+    action: () => exportSettings(),
+  },
+  5: {
+    name: 'Import Settings',
+    desc: 'Load settings from a JSON file and reload the site.',
+    type: 'button',
+    value: 'Import JSON',
+    action: () => importSettings(),
+  },
+  6: {
     name: 'Reset Instance',
     desc: 'Clear your site data if you are having issues.',
     type: 'button',

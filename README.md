@@ -5,82 +5,102 @@
 
   [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/I3I81MF4CH) ![](https://dcbadge.limes.pink/api/server/https://discord.gg/unblocking?compact=true)
 
-
-  <hr />
-  DogeUB (Doge Unblocker) version 5 is finally here!
-
   
-  <br />
-  <br />
-
-  <img width="1278" height="628" alt="image" src="preview.png" />
-
-
 </div>
 
-## Overview
+# 
 
-DogeUB is a modern web proxy frontend and internet browsing hub, allowing you to browse the web anonymously while providing a full suite of apps and games, built with [React](https://github.com/facebook/react).
+A versatile, "internet hub"; The point of this project is to eliminate the need to search multiple websites for different things by packing together tools, apps, as well as entertainment and private browsing, all in one place. This is particularly useful for people who are lazy and want a "hub" that includes everything that they need to enjoy the internet.
 
-> [!IMPORTANT]
-> Please consider starring our repository if you are forking it!
 
-### Features:
+Many of our tools, apps, entertainment, etc. is requested through our Discord community or added through pull requests. We recommend making PRs to help out and contribute!
 
-- **Performance:** Fast, lightweight, and highly responsive.
-- **Tabs:** Browse multiple sites with ease, providing an experience similar to a web browser!
-- **Customization:** Multiple themes, extensive settings, and user-tailored experience.
+
+> [!CAUTION]
+> Although this is an "internet hub", we do **not** include illegal, piracy, or copyright-infringing tools or apps.
+
+> ⭐ Star this repository if you are forking it, or find it useful!
 
 ---
 
-## Development & Building
+### Development & Building
 
+dogeub can be easily deployed as a web application. Use the commands below to run it for production, or for developing.
 
-### Production:
+> [!WARNING]
+> This project will **not work on Vercel**. dogeub runs a custom Node server while Vercel only supports serverless functions & does not allow persistent Node servers.
+
+#### Production:
 ```bash
-git clone https://github.com/DogeNetwork/dogeub.git
+git clone https://github.com/xorynix/dogeub.git
 cd dogeub
 npm i
 npm run build
 npm i @vercel/analytics
 node server.js
-````
+```
 
-### Development:
+#### Development:
 
 ```bash
-git clone https://github.com/DogeNetwork/dogeub.git
+git clone https://github.com/xorynix/dogeub.git
 cd dogeub
 npm i
 npm run dev
 ```
-
 ---
 
+#### Deploying with Docker:
 
-## Contributors / Developers
-
-| Name          | Role               | GitHub |
-| ------------- | ------------------ | ------ |
-| Derpman | Lead Developer     |      [@qerionx](https://github.com/qerionx) |
-| Fowntain | Project Manager | [@fowntain](https://github.com/fowntain)     |
-| Akane | Contributor | [@genericness](https://github.com/genericness)     |
-| DJshelfmushroom | Contributor | [@DJshelfmushroom](https://github.com/DJshelfmushroom)     |
-
+```bash
+docker run -d \
+  --name dogeub \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e PORT=3000 \
+  ghcr.io/xorynix/dogeub:latest
+```
 
 > [!NOTE]
-> Want to be on this list? Make a few pull requests!
+> If accessing over a network instead of localhost, you will need to provide a valid SSL certificate (e.g., using a reverse proxy like Nginx or Caddy). This is required for the built-in service worker to function properly.
 
 ---
 
-### Made possible thanks to:
+### Contributors / Developers
 
-* [MercuryWorkshop/wisp-server-node](https://github.com/MercuryWorkshop/wisp-server-node)
-* [MercuryWorkshop/scramjet](https://github.com/MercuryWorkshop/scramjet)
-* [titaniumnetwork-dev/Ultraviolet](https://github.com/titaniumnetwork-dev/Ultraviolet)
-* [lucide-icons/lucide](https://github.com/lucide-icons/lucide)
+[![Contributors](https://contrib.rocks/image?repo=xorynix/dogeub)](https://github.com/xorynix/dogeub/graphs/contributors)
 
+> Want to be on this list? Contribute to this project!
+
+---
+
+
+
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=xorynix%2Fdogeub&type=timeline&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=xorynix/dogeub&type=timeline&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=xorynix/dogeub&type=timeline&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=xorynix/dogeub&type=timeline&legend=top-left" />
+ </picture>
+</a>
+
+
+
+
+Thanks to these libraries for making the project possible:
+
+- [MercuryWorkshop/wisp-server-node](https://github.com/MercuryWorkshop/wisp-server-node)
+- [MercuryWorkshop/scramjet](https://github.com/MercuryWorkshop/scramjet)
+- [titaniumnetwork-dev/Ultraviolet](https://github.com/titaniumnetwork-dev/Ultraviolet)
+- [lucide-icons/lucide](https://github.com/lucide-icons/lucide)
+- [pmndrs/zustand](https://github.com/pmndrs/zustand)
+- [Stuk/jszip](https://github.com/Stuk/jszip)
+  
 ## License
 
-This project is licensed under the **GNU Affero GPL v3**.  
+This project is licensed under the **AGPLv3** license.
 See the [LICENSE](LICENSE) file for more details.
