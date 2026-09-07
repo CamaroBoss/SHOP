@@ -9,7 +9,6 @@ import { createServer } from "node:http";
 import { logging, server as wisp } from "@mercuryworkshop/wisp-js/server";
 import { createBareServer } from "@tomphttp/bare-server-node";
 import { MasqrMiddleware } from "./masqr.js";
-import { Analytics } from "@vercel/analytics/next";
 
 dotenv.config();
 
