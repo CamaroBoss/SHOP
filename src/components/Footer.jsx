@@ -3,17 +3,14 @@ import { memo, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import BookmarksModal from './Bookmarks';
 import DisableAdsModal from './DisableAds';
-
 const Footer = memo(() => {
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
   const [isDisableAdsOpen, setIsDisableAdsOpen] = useState(false);
-
   const handleAboutBlank = useCallback(() => {
     import('/src/utils/utils.js').then(({ openAboutBlankPopup }) => openAboutBlankPopup(true));
   }, []);
-
   return (
-    <div className="w-full fixed bottom-0 flex items-center justify-between p-2 relative">
+    <div className="w-full fixed bottom-0 flex items-center justify-between p-2">
       {' '}
       <div className="flex gap-2 items-center">
         <div
